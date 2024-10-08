@@ -15,6 +15,7 @@ export class CommentsController {
       taskId,
       createCommentDto.text,
       createCommentDto.author,
+      createCommentDto.parentCommentId,
     );
   }
 

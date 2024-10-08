@@ -3,7 +3,8 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  CreateDateColumn,
+  OneToMany,
+  JoinColumn,
 } from 'typeorm';
 import { Task } from './task.entity';
 
@@ -16,11 +17,22 @@ export class Comment {
   text: string;
 
   @Column()
-  author: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
+  author: number; // Ensure this is a non-nullable number
 
   @ManyToOne(() => Task, (task) => task.comments, { onDelete: 'CASCADE' })
   task: Task;
+
+  @ManyToOne(() => Comment, (comment) => comment.replies, { nullable: true })
+  @JoinColumn({ name: 'parentCommentId' })
+  parentComment: Comment;
+
+  // Add this explicitly so it's always included in the response
+  @Column({ nullable: true })
+  parentCommentId: number;
+
+  @OneToMany(() => Comment, (comment) => comment.parentComment)
+  replies: Comment[];
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
 }
