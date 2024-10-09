@@ -22,6 +22,14 @@ export class TaskController {
     return this.taskService.update(+id, updateTaskDto);
   }
 
+  @Put(':id/completion')
+  async toggleTaskCompletion(
+    @Param('id') id: string,
+    @Body('completed') completed: boolean,
+  ) {
+    return this.taskService.updateTaskCompletionStatus(+id, completed);
+  }
+
   @Get('capsule/:capsuleId')
   findByCapsule(@Param('capsuleId') capsuleId: string) {
     return this.taskService.findByCapsule(+capsuleId);

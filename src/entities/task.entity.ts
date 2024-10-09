@@ -1,3 +1,5 @@
+// src/entities/task.entity.ts
+
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -28,7 +30,10 @@ export class Task {
   @Column({ default: 'Medium' })
   priority: string;
 
-  // Correct reference to Comment entity
+  // New field to track if the task is completed
+  @Column({ default: false })
+  isCompleted: boolean;
+
   @OneToMany(() => Comment, (comment) => comment.task, { cascade: true })
   comments: Comment[];
 

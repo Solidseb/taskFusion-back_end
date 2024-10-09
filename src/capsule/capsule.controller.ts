@@ -1,3 +1,5 @@
+// src/capsules/capsule.controller.ts
+
 import {
   Controller,
   Get,
@@ -16,19 +18,16 @@ import { CreateCapsuleDto } from './dto/create-capsule.dto';
 export class CapsuleController {
   constructor(private readonly capsuleService: CapsuleService) {}
 
-  // Fetch all capsules
   @Get()
   findAll(): Promise<Capsule[]> {
     return this.capsuleService.findAll();
   }
 
-  // Create a new capsule
   @Post()
   create(@Body() createCapsuleDto: CreateCapsuleDto): Promise<Capsule> {
     return this.capsuleService.create(createCapsuleDto);
   }
 
-  // Update a capsule
   @Put(':id')
   update(
     @Param('id') id: string,
@@ -37,13 +36,11 @@ export class CapsuleController {
     return this.capsuleService.update(+id, createCapsuleDto);
   }
 
-  // Get details of a specific capsule
   @Get(':id')
   findOne(@Param('id') id: string): Promise<Capsule> {
     return this.capsuleService.findOne(+id);
   }
 
-  // Delete capsule by ID
   @Delete(':id')
   async deleteCapsule(@Param('id') id: string): Promise<{ message: string }> {
     const deleted = await this.capsuleService.delete(parseInt(id));

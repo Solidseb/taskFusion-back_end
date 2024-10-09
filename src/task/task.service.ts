@@ -93,4 +93,17 @@ export class TaskService {
       relations: ['assignedUsers', 'capsule'],
     });
   }
+
+  async updateTaskCompletionStatus(
+    id: number,
+    completed: boolean,
+  ): Promise<Task> {
+    const task = await this.taskRepository.findOne({ where: { id } });
+    if (!task) {
+      throw new NotFoundException(`Task with id ${id} not found`);
+    }
+
+    task.isCompleted = completed;
+    return this.taskRepository.save(task);
+  }
 }

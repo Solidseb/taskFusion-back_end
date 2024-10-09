@@ -1,4 +1,5 @@
 // src/entities/capsule.entity.ts
+
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -19,6 +20,12 @@ export class Capsule {
 
   @Column({ nullable: true })
   description: string;
+
+  @Column({ type: 'date', nullable: true })
+  dueDate: string; // Original due date of the capsule
+
+  @Column({ type: 'date', nullable: true })
+  newDueDate: string; // Updated due date (if changed)
 
   @ManyToOne(() => User, (user) => user.capsules)
   user: User; // Capsule owner
