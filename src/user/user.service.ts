@@ -57,7 +57,7 @@ export class UserService {
   // Get all users (for listing)
   findAll() {
     return this.userRepository.find({
-      select: ['id', 'name', 'email'],
+      select: ['id', 'name', 'email', 'avatar'],
     });
   }
 
@@ -78,7 +78,7 @@ export class UserService {
   // Update the user profile, including bio, skills, name, and email, and optionally the password
   async updateProfile(
     userId: string,
-    profileData: { bio: string; name: string; email: string },
+    profileData: { bio: string; name: string; email: string; avatar?: string },
     skillsData: Skill[],
     password?: string,
   ): Promise<Profile> {
@@ -89,6 +89,10 @@ export class UserService {
     if (password) {
       const hashedPassword = await bcrypt.hash(password, 10);
       user.password = hashedPassword;
+    }
+
+    if (profileData.avatar) {
+      user.avatar = profileData.avatar; // Save Base64 avatar
     }
 
     // Update the user's name and email

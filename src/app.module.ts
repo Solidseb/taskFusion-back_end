@@ -12,9 +12,15 @@ import { Comment } from './entities/comment.entity';
 import { Task } from './entities/task.entity';
 import { Profile } from './entities/profile.entity';
 import { Skill } from './entities/skill.entity';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
+    }),
     ConfigModule.forRoot({ isGlobal: true }),
 
     TypeOrmModule.forRootAsync({

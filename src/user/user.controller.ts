@@ -43,7 +43,7 @@ export class UserController {
     @Req() req: RequestWithUser,
     @Body()
     body: {
-      profile: { bio: string; name: string; email: string };
+      profile: { bio: string; name: string; email: string; avatar?: string };
       skills: Skill[];
       password?: string;
     },

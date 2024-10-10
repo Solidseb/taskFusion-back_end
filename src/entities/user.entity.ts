@@ -2,14 +2,12 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  OneToOne,
-  JoinColumn,
   OneToMany,
   ManyToMany,
 } from 'typeorm';
-import { Profile } from './profile.entity';
 import { Capsule } from './capsule.entity';
 import { Task } from './task.entity';
+import { Profile } from './profile.entity';
 
 @Entity()
 export class User {
@@ -23,7 +21,10 @@ export class User {
   email: string;
 
   @Column()
-  password: string;
+  password: string; // Should be hashed
+
+  @Column({ nullable: true }) // Allow null if no avatar is uploaded
+  avatar: string;
 
   @OneToMany(() => Capsule, (capsule) => capsule.user)
   capsules: Capsule[];
@@ -31,10 +32,6 @@ export class User {
   @ManyToMany(() => Task, (task) => task.assignedUsers)
   tasks: Task[];
 
-  @Column({ nullable: true }) // Allow null if no avatar is uploaded
-  avatar: string;
-
-  @OneToOne(() => Profile, { cascade: true }) // One-to-one relationship with profile
-  @JoinColumn() // This marks the ownership of the relation
-  profile: Profile;
+  @OneToMany(() => Profile, (profile) => profile.user, { cascade: true })
+  profile: Profile[];
 }
