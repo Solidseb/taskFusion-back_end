@@ -16,7 +16,7 @@ export class CommentsService {
   async createComment(
     taskId: number,
     text: string,
-    author: number,
+    author: string,
     parentCommentId?: number,
   ): Promise<Comment> {
     const task = await this.tasksRepository.findOne({ where: { id: taskId } });

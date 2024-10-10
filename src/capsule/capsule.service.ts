@@ -120,7 +120,7 @@ export class CapsuleService {
 
   // Helper function to extract assigned users from tasks
   private extractAssignedUsers(tasks: Task[]): User[] {
-    const assignedUsersMap = new Map<number, User>();
+    const assignedUsersMap = new Map<string, User>();
     tasks.forEach((task) => {
       task.assignedUsers.forEach((user) => {
         if (!assignedUsersMap.has(user.id)) {

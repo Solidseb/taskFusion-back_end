@@ -1,3 +1,5 @@
+// src/app.module.ts
+
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -7,24 +9,22 @@ import { UserModule } from './user/user.module';
 import { typeOrmConfig } from './config/typeorm.config';
 import { AuthModule } from './auth/auth.module';
 import { Comment } from './entities/comment.entity';
-import { Task } from './entities/task.entity'; // Ensure Task entity is also imported
+import { Task } from './entities/task.entity';
+import { Profile } from './entities/profile.entity';
+import { Skill } from './entities/skill.entity';
 
 @Module({
   imports: [
-    // Import the ConfigModule globally to access environment variables
     ConfigModule.forRoot({ isGlobal: true }),
 
-    // Initialize TypeOrmModule asynchronously using the configuration function
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: typeOrmConfig, // Use the separate configuration function
+      useFactory: typeOrmConfig,
     }),
 
-    // Register the entities with TypeORM
-    TypeOrmModule.forFeature([Comment, Task]), // Register Comment and Task entities
+    TypeOrmModule.forFeature([Comment, Task, Profile, Skill]),
 
-    // Import all other modules required in the application
     AuthModule,
     CapsuleModule,
     TaskModule,

@@ -17,7 +17,7 @@ export class Comment {
   text: string;
 
   @Column()
-  author: number; // Ensure this is a non-nullable number
+  author: string; // Ensure this is a non-nullable number
 
   @ManyToOne(() => Task, (task) => task.comments, { onDelete: 'CASCADE' })
   task: Task;

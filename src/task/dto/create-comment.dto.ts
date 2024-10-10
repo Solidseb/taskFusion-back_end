@@ -5,7 +5,7 @@ export class CreateCommentDto {
   text: string;
 
   @IsString()
-  author: number;
+  author: string;
 
   @IsOptional()
   @IsNumber()
