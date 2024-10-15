@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsDateString,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -28,11 +29,19 @@ export class CreateTaskDto {
   priority: string;
 
   @IsOptional()
-  @IsString()
+  @IsDateString()
   dueDate?: string;
+
+  @IsDateString()
+  @IsOptional()
+  startDate?: string;
+
+  @IsDateString()
+  @IsOptional()
+  completedDate?: string;
 
   @IsOptional()
   @IsArray()
-  @IsInt({ each: true }) // Validate each ID in the array
+  @IsInt({ each: true })
   assignedUserIds?: number[];
 }

@@ -44,6 +44,12 @@ export class Task {
   @Column({ type: 'date', nullable: true })
   dueDate: string;
 
+  @Column({ type: 'date', nullable: true })
+  startDate: string;
+
+  @Column({ type: 'date', nullable: true })
+  completedDate: string;
+
   @ManyToOne(() => Capsule, (capsule) => capsule.tasks, { onDelete: 'CASCADE' })
   capsule: Capsule;
 }

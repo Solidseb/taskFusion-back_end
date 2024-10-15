@@ -102,8 +102,9 @@ export class TaskService {
     if (!task) {
       throw new NotFoundException(`Task with id ${id} not found`);
     }
-    task.status = 'Completed';
+    task.isCompleted = completed;
     task.status = completed ? 'Completed' : 'In Progress';
+    task.completedDate = completed ? new Date().toISOString() : null;
     return this.taskRepository.save(task);
   }
 }

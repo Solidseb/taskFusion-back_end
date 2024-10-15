@@ -1,4 +1,10 @@
-import { IsArray, IsInt, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsDateString,
+  IsInt,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class UpdateTaskDto {
   @IsOptional()
@@ -18,11 +24,19 @@ export class UpdateTaskDto {
   description?: string;
 
   @IsOptional()
-  @IsString()
+  @IsDateString()
   dueDate?: string;
+
+  @IsDateString()
+  @IsOptional()
+  startDate?: string;
+
+  @IsDateString()
+  @IsOptional()
+  completedDate?: string;
 
   @IsOptional()
   @IsArray()
-  @IsInt({ each: true }) // Validate each ID in the array
+  @IsInt({ each: true })
   assignedUserIds?: number[];
 }
