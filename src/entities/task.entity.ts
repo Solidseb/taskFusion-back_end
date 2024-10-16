@@ -8,6 +8,7 @@ import {
   JoinTable,
   ManyToOne,
   OneToMany,
+  JoinColumn,
 } from 'typeorm';
 import { Capsule } from './capsule.entity';
 import { User } from './user.entity';
@@ -52,4 +53,14 @@ export class Task {
 
   @ManyToOne(() => Capsule, (capsule) => capsule.tasks, { onDelete: 'CASCADE' })
   capsule: Capsule;
+
+  @Column({ nullable: true })
+  parent_id?: number; // Nullable for main tasks
+
+  @ManyToOne(() => Task, (task) => task.subtasks, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'parent_id' })
+  parentTask?: Task;
+
+  @OneToMany(() => Task, (task) => task.parentTask)
+  subtasks: Task[];
 }

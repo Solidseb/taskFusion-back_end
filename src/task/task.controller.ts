@@ -1,4 +1,13 @@
-import { Controller, Post, Body, Get, Param, Put } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  Put,
+  Query,
+  Delete,
+} from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -22,6 +31,11 @@ export class TaskController {
     return this.taskService.update(+id, updateTaskDto);
   }
 
+  @Delete(':id')
+  delete(@Param('id') id: string) {
+    return this.taskService.delete(+id);
+  }
+
   @Put(':id/completion')
   async toggleTaskCompletion(
     @Param('id') id: string,
@@ -33,5 +47,14 @@ export class TaskController {
   @Get('capsule/:capsuleId')
   findByCapsule(@Param('capsuleId') capsuleId: string) {
     return this.taskService.findByCapsule(+capsuleId);
+  }
+
+  // New route to fetch subtasks by parentId
+  @Get()
+  findTasks(@Query('parentId') parentId: string) {
+    if (parentId) {
+      return this.taskService.findByParentId(+parentId);
+    }
+    return [];
   }
 }

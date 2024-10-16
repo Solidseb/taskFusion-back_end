@@ -44,4 +44,8 @@ export class CreateTaskDto {
   @IsArray()
   @IsInt({ each: true })
   assignedUserIds?: number[];
+
+  @IsOptional()
+  @IsInt()
+  parent_id?: number;
 }
