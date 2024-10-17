@@ -7,14 +7,23 @@ import {
   Put,
   Query,
   Delete,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RequestWithUser } from 'src/auth/request-with-user.interface';
+import { TaskHistoryService } from './task-history.service';
 
 @Controller('tasks')
+@UseGuards(JwtAuthGuard)
 export class TaskController {
-  constructor(private readonly taskService: TaskService) {}
+  constructor(
+    private readonly taskService: TaskService,
+    private readonly taskHistoryService: TaskHistoryService,
+  ) {}
 
   @Get(':id')
   findOne(@Param('id') id: string) {
@@ -22,26 +31,35 @@ export class TaskController {
   }
 
   @Post()
-  create(@Body() createTaskDto: CreateTaskDto) {
-    return this.taskService.create(createTaskDto);
+  create(@Req() req: RequestWithUser, @Body() createTaskDto: CreateTaskDto) {
+    const userId = req.user.id;
+    return this.taskService.create(createTaskDto, userId);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
-    return this.taskService.update(+id, updateTaskDto);
+  update(
+    @Req() req: RequestWithUser,
+    @Param('id') id: string,
+    @Body() updateTaskDto: UpdateTaskDto,
+  ) {
+    const userId = req.user.id;
+    return this.taskService.update(+id, updateTaskDto, userId);
   }
 
   @Delete(':id')
-  delete(@Param('id') id: string) {
-    return this.taskService.delete(+id);
+  delete(@Req() req: RequestWithUser, @Param('id') id: string) {
+    const userId = req.user.id;
+    return this.taskService.delete(+id, userId);
   }
 
   @Put(':id/completion')
   async toggleTaskCompletion(
+    @Req() req: RequestWithUser,
     @Param('id') id: string,
     @Body('completed') completed: boolean,
   ) {
-    return this.taskService.updateTaskCompletionStatus(+id, completed);
+    const userId = req.user.id;
+    return this.taskService.updateTaskCompletionStatus(+id, completed, userId);
   }
 
   @Get('capsule/:capsuleId')
@@ -56,5 +74,10 @@ export class TaskController {
       return this.taskService.findByParentId(+parentId);
     }
     return [];
+  }
+
+  @Get(':id/history')
+  getTaskHistory(@Param('id') id: string) {
+    return this.taskHistoryService.getTaskHistory(+id);
   }
 }

@@ -7,6 +7,7 @@ import { User } from '../entities/user.entity';
 import { Comment } from '../entities/comment.entity';
 import { Profile } from 'src/entities/profile.entity';
 import { Skill } from 'src/entities/skill.entity';
+import { TaskHistory } from 'src/entities/task-history.entity';
 
 export const typeOrmConfig = (
   configService: ConfigService,
@@ -17,6 +18,6 @@ export const typeOrmConfig = (
   username: configService.get<string>('DATABASE_USER'),
   password: configService.get<string>('DATABASE_PASSWORD'),
   database: configService.get<string>('DATABASE_NAME'),
-  entities: [Capsule, Task, User, Comment, Profile, Skill],
+  entities: [Capsule, Task, User, Comment, Profile, Skill, TaskHistory],
   synchronize: true, // Disable in production
 });

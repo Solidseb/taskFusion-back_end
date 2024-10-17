@@ -13,6 +13,7 @@ import {
 import { Capsule } from './capsule.entity';
 import { User } from './user.entity';
 import { Comment } from './comment.entity'; // Ensure this is imported
+import { TaskHistory } from './task-history.entity';
 
 @Entity()
 export class Task {
@@ -63,4 +64,10 @@ export class Task {
 
   @OneToMany(() => Task, (task) => task.parentTask)
   subtasks: Task[];
+
+  @ManyToOne(() => User)
+  createdBy: User;
+
+  @OneToMany(() => TaskHistory, (history) => history.task)
+  history: TaskHistory[];
 }

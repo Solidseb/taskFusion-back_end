@@ -14,6 +14,7 @@ import { Profile } from './entities/profile.entity';
 import { Skill } from './entities/skill.entity';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { TaskHistory } from './entities/task-history.entity';
 
 @Module({
   imports: [
@@ -29,7 +30,7 @@ import { join } from 'path';
       useFactory: typeOrmConfig,
     }),
 
-    TypeOrmModule.forFeature([Comment, Task, Profile, Skill]),
+    TypeOrmModule.forFeature([Comment, Task, Profile, Skill, TaskHistory]),
 
     AuthModule,
     CapsuleModule,
