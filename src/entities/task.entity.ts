@@ -70,4 +70,15 @@ export class Task {
 
   @OneToMany(() => TaskHistory, (history) => history.task)
   history: TaskHistory[];
+
+  @ManyToMany(() => Task, (task) => task.dependentTasks, { cascade: true })
+  @JoinTable({
+    name: 'task_blockers',
+    joinColumn: { name: 'taskId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'blockerId', referencedColumnName: 'id' },
+  })
+  blockers: Task[];
+
+  @ManyToMany(() => Task, (task) => task.blockers)
+  dependentTasks: Task[];
 }

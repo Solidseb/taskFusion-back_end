@@ -48,4 +48,8 @@ export class CreateTaskDto {
   @IsOptional()
   @IsInt()
   parent_id?: number;
+
+  @IsOptional()
+  @IsArray()
+  blockers?: number[];
 }

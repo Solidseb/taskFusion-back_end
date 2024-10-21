@@ -23,11 +23,11 @@ export class TaskService {
     private taskHistoryService: TaskHistoryService,
   ) {}
 
-  // Find task details by ID (with subtasks)
+  // Find task details by ID (with subtasks and blockers)
   async findOne(id: number): Promise<Task> {
     const task = await this.taskRepository.findOne({
       where: { id },
-      relations: ['assignedUsers', 'capsule', 'subtasks'],
+      relations: ['assignedUsers', 'capsule', 'subtasks', 'blockers'],
     });
 
     if (!task) {
@@ -37,9 +37,23 @@ export class TaskService {
     return task;
   }
 
+  // Fetch dependencies of a task
+  async getTaskDependencies(id: number): Promise<Task[]> {
+    const task = await this.taskRepository.findOne({
+      where: { id },
+      relations: ['blockers', 'dependentTasks'],
+    });
+
+    if (!task) {
+      throw new NotFoundException(`Task with ID ${id} not found`);
+    }
+
+    return task.blockers;
+  }
+
   // Create a new task (or subtask if parent_id is provided)
   async create(createTaskDto: CreateTaskDto, userId: string): Promise<Task> {
-    const { assignedUserIds, capsuleId, parent_id, ...taskData } =
+    const { assignedUserIds, capsuleId, parent_id, blockers, ...taskData } =
       createTaskDto;
 
     const capsule = await this.capsuleRepository.findOne({
@@ -61,6 +75,13 @@ export class TaskService {
         );
       }
       task.parent_id = parent_id;
+    }
+
+    if (blockers && blockers.length > 0) {
+      const blockerTasks = await this.taskRepository.findBy({
+        id: In(blockers),
+      });
+      task.blockers = blockerTasks;
     }
 
     if (assignedUserIds && assignedUserIds.length > 0) {
@@ -102,12 +123,13 @@ export class TaskService {
   ): Promise<Task> {
     const task = await this.taskRepository.findOne({
       where: { id },
+      relations: ['blockers'],
     });
     if (!task) {
       throw new NotFoundException(`Task with ID ${id} not found`);
     }
 
-    const { assignedUserIds, parent_id, ...taskData } = updateTaskDto;
+    const { assignedUserIds, parent_id, blockers, ...taskData } = updateTaskDto;
     const changes: Record<string, any> = {};
 
     // Function to dynamically detect changes
@@ -123,6 +145,7 @@ export class TaskService {
       }
     };
 
+    const oldUserIds = task.assignedUsers.map((user) => user.id);
     // Iterate over the taskData fields dynamically
     Object.keys(taskData).forEach((key) => {
       detectChanges(task[key], taskData[key], key);
@@ -135,9 +158,9 @@ export class TaskService {
         id: In(assignedUserIds),
       });
 
-      const oldUserIds = task.assignedUsers.map((user) => user.id);
       const newUserIds = newUsers.map((user) => user.id);
-
+      oldUserIds.sort();
+      newUserIds.sort();
       if (JSON.stringify(oldUserIds) !== JSON.stringify(newUserIds)) {
         changes.assignedUsers = {
           old: oldUserIds,
@@ -146,6 +169,25 @@ export class TaskService {
 
         task.assignedUsers = newUsers;
       }
+    }
+
+    try {
+      if (blockers) {
+        const blockerTasks = await this.taskRepository.findBy({
+          id: In(blockers),
+        });
+        blockerTasks.sort();
+        const oldBlockers = task.blockers.sort();
+        if (JSON.stringify(oldBlockers) !== JSON.stringify(blockerTasks)) {
+          changes.blockers = {
+            old: oldBlockers.map((task) => task.id),
+            new: blockers,
+          };
+          task.blockers = blockerTasks;
+        }
+      }
+    } catch (e) {
+      console.log(e);
     }
 
     // Handle parent task change (subtask reassignment)
@@ -168,7 +210,7 @@ export class TaskService {
     if (Object.keys(changes).length > 0) {
       await this.taskHistoryService.logTaskHistory(
         updatedTask.id,
-        task.capsule.id,
+        updateTaskDto.capsuleId,
         userId,
         'taskUpdated',
         JSON.stringify(changes),
@@ -178,7 +220,7 @@ export class TaskService {
       if (task.parent_id) {
         await this.taskHistoryService.logTaskHistory(
           task.parent_id,
-          task.capsule.id,
+          updateTaskDto.capsuleId,
           userId,
           'subtaskUpdated',
           JSON.stringify({ subtaskId: updatedTask.id, changes }),
@@ -193,7 +235,7 @@ export class TaskService {
   async delete(id: number, userId: string): Promise<void> {
     const task = await this.taskRepository.findOne({
       where: { id },
-      relations: ['subtasks', 'capsule'],
+      relations: ['subtasks', 'capsule', 'blockers'],
     });
 
     if (!task) {
@@ -231,20 +273,69 @@ export class TaskService {
     id: number,
     completed: boolean,
     userId: string,
-  ): Promise<Task> {
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    blockers?: any[];
+    subtasks?: any[];
+    task?: Task;
+  }> {
     const task = await this.taskRepository.findOne({
       where: { id },
-      relations: ['subtasks', 'parentTask', 'capsule'],
+      relations: [
+        'subtasks',
+        'parentTask',
+        'capsule',
+        'blockers',
+        'dependentTasks',
+      ], // Added 'dependentTasks' relation
     });
 
     if (!task) {
       throw new NotFoundException(`Task with ID ${id} not found`);
     }
 
+    // Check if there are incomplete blockers
+    const incompleteBlockers = task.blockers.filter(
+      (blocker) => blocker.status !== 'Completed',
+    );
+    if (incompleteBlockers.length > 0) {
+      return {
+        success: false,
+        message: 'Task is blocked by incomplete tasks',
+        blockers: incompleteBlockers.map((blocker) => ({
+          id: blocker.id,
+          title: blocker.title,
+          status: blocker.status,
+        })),
+      };
+    }
+
+    // Check if all subtasks are completed
+    if (completed && task.subtasks && task.subtasks.length > 0) {
+      const incompleteSubtasks = task.subtasks.filter(
+        (subtask) => !subtask.isCompleted,
+      );
+      if (incompleteSubtasks.length > 0) {
+        return {
+          success: false,
+          message:
+            'Task cannot be completed because some subtasks are not completed',
+          subtasks: incompleteSubtasks.map((subtask) => ({
+            id: subtask.id,
+            title: subtask.title,
+            status: subtask.status,
+          })),
+        };
+      }
+    }
+
+    // Update task completion status
     task.isCompleted = completed;
     task.status = completed ? 'Completed' : 'In Progress';
     task.completedDate = completed ? new Date().toISOString() : null;
 
+    // If the task is a subtask and it's being marked incomplete, update the parent task
     if (task.parent_id && !completed) {
       const parentTask = await this.taskRepository.findOne({
         where: { id: task.parent_id },
@@ -259,29 +350,42 @@ export class TaskService {
       }
     }
 
-    if (task.subtasks && task.subtasks.length > 0) {
-      if (completed) {
-        const allSubtasksCompleted = task.subtasks.every(
-          (subtask) => subtask.isCompleted,
+    // Update the status of subtasks if the task is being marked incomplete
+    /*if (task.subtasks && task.subtasks.length > 0 && !completed) {
+      task.subtasks.forEach((subtask) => {
+        subtask.isCompleted = false;
+        subtask.status = 'In Progress';
+        subtask.completedDate = null;
+      });
+      await this.taskRepository.save(task.subtasks);
+    }*/
+
+    // If the task has dependent tasks (tasks blocked by this one), mark them as "In Progress" if this task is marked incomplete
+    if (!completed && task.dependentTasks && task.dependentTasks.length > 0) {
+      for (const dependentTask of task.dependentTasks) {
+        dependentTask.isCompleted = false;
+        dependentTask.status = 'In Progress';
+        dependentTask.completedDate = null;
+
+        await this.taskRepository.save(dependentTask);
+
+        // Log the change for each dependent task
+        await this.taskHistoryService.logTaskHistory(
+          dependentTask.id,
+          task.capsule.id,
+          userId,
+          'taskInProgress',
+          JSON.stringify({
+            message: `Task was unblocked due to change in task ${task.id}`,
+          }),
         );
-        if (!allSubtasksCompleted) {
-          throw new Error(
-            'Cannot complete the task because some subtasks are not completed',
-          );
-        }
-      } else {
-        task.subtasks.forEach((subtask) => {
-          subtask.isCompleted = false;
-          subtask.status = 'In Progress';
-          subtask.completedDate = null;
-        });
-        await this.taskRepository.save(task.subtasks);
       }
     }
 
+    // Save the updated task
     const updatedTask = await this.taskRepository.save(task);
 
-    // Log task completion status change as a JSON object
+    // Log task completion status change
     const changes = {
       status: completed ? 'Completed' : 'In Progress',
       completedDate: task.completedDate,
@@ -295,7 +399,7 @@ export class TaskService {
       JSON.stringify(changes),
     );
 
-    // If it's a subtask, log the completion status in the parent task as well
+    // If it's a subtask, log the completion status in the parent task
     if (task.parent_id) {
       await this.taskHistoryService.logTaskHistory(
         task.parent_id,
@@ -306,7 +410,10 @@ export class TaskService {
       );
     }
 
-    return updatedTask;
+    return {
+      success: true,
+      task: updatedTask,
+    };
   }
 
   async findByCapsule(capsuleId: number): Promise<Task[]> {
@@ -315,17 +422,17 @@ export class TaskService {
         capsule: { id: capsuleId },
         parent_id: null,
       },
-      relations: ['assignedUsers', 'capsule', 'subtasks'],
+      relations: ['assignedUsers', 'capsule', 'subtasks', 'blockers'],
     });
 
     return tasks.filter((task) => task.parent_id === null);
   }
 
-  // Fetch tasks by parentId (subtasks)
+  // Fetch tasks by parentId (subtasks) or dependencies (blockers)
   async findByParentId(parentId: number): Promise<Task[]> {
     return this.taskRepository.find({
       where: { parent_id: parentId },
-      relations: ['assignedUsers', 'capsule', 'subtasks'],
+      relations: ['assignedUsers', 'capsule', 'subtasks', 'blockers'],
     });
   }
 }

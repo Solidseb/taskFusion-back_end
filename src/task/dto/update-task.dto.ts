@@ -42,5 +42,13 @@ export class UpdateTaskDto {
 
   @IsOptional()
   @IsInt()
+  capsuleId?: number;
+
+  @IsOptional()
+  @IsInt()
   parent_id?: number;
+
+  @IsOptional()
+  @IsArray()
+  blockers?: number[];
 }

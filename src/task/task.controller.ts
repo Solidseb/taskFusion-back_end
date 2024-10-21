@@ -80,4 +80,9 @@ export class TaskController {
   getTaskHistory(@Param('id') id: string) {
     return this.taskHistoryService.getTaskHistory(+id);
   }
+
+  @Get(':id/dependencies')
+  getTaskDependencies(@Param('id') id: string) {
+    return this.taskService.getTaskDependencies(+id);
+  }
 }
