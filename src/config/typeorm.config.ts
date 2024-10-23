@@ -9,6 +9,8 @@ import { Profile } from 'src/entities/profile.entity';
 import { Skill } from 'src/entities/skill.entity';
 import { TaskHistory } from 'src/entities/task-history.entity';
 import { Organization } from 'src/entities/organization.entity';
+import { Setting } from 'src/entities/setting.entity';
+import { Tag } from 'src/entities/tag.entity';
 
 export const typeOrmConfig = (
   configService: ConfigService,
@@ -28,6 +30,8 @@ export const typeOrmConfig = (
     Skill,
     TaskHistory,
     Organization,
+    Setting,
+    Tag,
   ],
   synchronize: true, // Disable in production
 });

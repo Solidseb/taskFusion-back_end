@@ -2,6 +2,8 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { User } from './user.entity';
 import { Capsule } from './capsule.entity';
 import { Task } from './task.entity';
+import { Setting } from './setting.entity';
+import { Tag } from './tag.entity';
 
 @Entity()
 export class Organization {
@@ -30,10 +32,16 @@ export class Organization {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
+  @OneToMany(() => Setting, (setting) => setting.organization)
+  settings: Setting[];
+
   @Column({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',
     onUpdate: 'CURRENT_TIMESTAMP',
   })
   updatedAt: Date;
+
+  @OneToMany(() => Tag, (tag) => tag.organization)
+  tags: Tag[];
 }

@@ -15,6 +15,7 @@ import { User } from './user.entity';
 import { Comment } from './comment.entity'; // Ensure this is imported
 import { TaskHistory } from './task-history.entity';
 import { Organization } from './organization.entity';
+import { Tag } from './tag.entity';
 
 @Entity()
 export class Task {
@@ -88,4 +89,8 @@ export class Task {
 
   @Column()
   organizationId: string;
+
+  @ManyToMany(() => Tag, (tag) => tag.tasks)
+  @JoinTable() // To define the relationship table for Many-to-Many
+  tags: Tag[];
 }

@@ -13,6 +13,12 @@ import { TaskHistory } from '../entities/task-history.entity';
 import { Organization } from 'src/entities/organization.entity';
 import { OrganizationService } from 'src/organization/organization.service';
 import { OrganizationController } from 'src/organization/organization.controller';
+import { Setting } from 'src/entities/setting.entity';
+import { SettingController } from 'src/settings/setgings.controller';
+import { SettingService } from 'src/settings/settings.service';
+import { Tag } from 'src/entities/tag.entity';
+import { TagService } from 'src/tag/tag.service';
+import { TagController } from 'src/tag/tag.controller';
 
 @Module({
   imports: [
@@ -23,6 +29,8 @@ import { OrganizationController } from 'src/organization/organization.controller
       Comment,
       TaskHistory,
       Organization,
+      Setting,
+      Tag,
     ]), // Ensure Capsule is included here
   ],
   providers: [
@@ -30,13 +38,23 @@ import { OrganizationController } from 'src/organization/organization.controller
     CommentsService,
     TaskHistoryService,
     OrganizationService,
+    SettingService,
+    TagService,
   ],
-  controllers: [TaskController, CommentsController, OrganizationController],
+  controllers: [
+    TaskController,
+    CommentsController,
+    OrganizationController,
+    SettingController,
+    TagController,
+  ],
   exports: [
     TaskService,
     CommentsService,
     TaskHistoryService,
     OrganizationService,
+    SettingService,
+    TagService,
   ],
 })
 export class TaskModule {}

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
+import { SettingService } from '../settings/settings.service'; // Import SettingsService
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -8,6 +9,7 @@ export class AuthService {
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
+    private settingsService: SettingService, // Inject SettingsService
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -30,6 +32,11 @@ export class AuthService {
       organizationId: user.organizationId, // Include the organizationId
     };
 
+    // Fetch organization settings based on organizationId
+    const settings = await this.settingsService.getSettingsByOrganization(
+      user.organizationId,
+    );
+
     return {
       access_token: this.jwtService.sign(payload),
       user: {
@@ -38,6 +45,7 @@ export class AuthService {
         email: user.email,
         organizationId: user.organizationId, // Return organization info
       },
+      settings, // Include settings in the response
     };
   }
 }
