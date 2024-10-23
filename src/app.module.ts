@@ -15,6 +15,8 @@ import { Skill } from './entities/skill.entity';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { TaskHistory } from './entities/task-history.entity';
+import { Organization } from './entities/organization.entity';
+import { OrganizationModule } from './organization/organization.module';
 
 @Module({
   imports: [
@@ -30,12 +32,20 @@ import { TaskHistory } from './entities/task-history.entity';
       useFactory: typeOrmConfig,
     }),
 
-    TypeOrmModule.forFeature([Comment, Task, Profile, Skill, TaskHistory]),
+    TypeOrmModule.forFeature([
+      Comment,
+      Task,
+      Profile,
+      Skill,
+      TaskHistory,
+      Organization,
+    ]),
 
     AuthModule,
     CapsuleModule,
     TaskModule,
     UserModule,
+    OrganizationModule,
   ],
 })
 export class AppModule {}

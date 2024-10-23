@@ -10,14 +10,20 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET'), // Use environment variable
+      secretOrKey: configService.get<string>('JWT_SECRET'),
     });
   }
 
   async validate(payload: any) {
     if (!payload) {
-      throw new UnauthorizedException('Invalid or expired token'); // Custom error message
+      throw new UnauthorizedException('Invalid or expired token');
     }
-    return { id: payload.sub, email: payload.email };
+
+    // Return the user details and organizationId for authorization checks
+    return {
+      id: payload.sub,
+      email: payload.email,
+      organizationId: payload.organizationId, // Include organizationId in the return
+    };
   }
 }

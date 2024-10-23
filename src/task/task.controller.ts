@@ -33,7 +33,8 @@ export class TaskController {
   @Post()
   create(@Req() req: RequestWithUser, @Body() createTaskDto: CreateTaskDto) {
     const userId = req.user.id;
-    return this.taskService.create(createTaskDto, userId);
+    const organizationId = req.user.organizationId;
+    return this.taskService.create(createTaskDto, userId, organizationId);
   }
 
   @Put(':id')

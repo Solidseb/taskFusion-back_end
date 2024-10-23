@@ -7,6 +7,7 @@ import { Capsule } from '../entities/capsule.entity';
 import { CreateCapsuleDto } from './dto/create-capsule.dto';
 import { Task } from '../entities/task.entity';
 import { User } from '../entities/user.entity';
+import { Organization } from '../entities/organization.entity';
 
 @Injectable()
 export class CapsuleService {
@@ -15,11 +16,14 @@ export class CapsuleService {
     private capsuleRepository: Repository<Capsule>,
     @InjectRepository(Task)
     private taskRepository: Repository<Task>,
+    @InjectRepository(Organization)
+    private organizationRepository: Repository<Organization>, // Injecting organization repository
   ) {}
 
   // Fetch all capsules with their tasks and calculated status, due dates, and assigned users
-  async findAll(): Promise<any[]> {
+  async findAllByOrganization(organizationId: string): Promise<any[]> {
     const capsules = await this.capsuleRepository.find({
+      where: { organization: { id: organizationId } }, // Fetch only capsules within the organization
       relations: ['tasks'],
     });
 
@@ -48,9 +52,26 @@ export class CapsuleService {
     });
   }
 
-  // Create a new capsule
-  async create(createCapsuleDto: CreateCapsuleDto): Promise<Capsule> {
-    const newCapsule = this.capsuleRepository.create(createCapsuleDto);
+  // Create a new capsule linked to an organization
+  async create(
+    createCapsuleDto: CreateCapsuleDto,
+    organizationId: string,
+  ): Promise<Capsule> {
+    const organization = await this.organizationRepository.findOne({
+      where: { id: organizationId },
+    });
+
+    if (!organization) {
+      throw new NotFoundException(
+        `Organization with id ${organizationId} not found`,
+      );
+    }
+
+    const newCapsule = this.capsuleRepository.create({
+      ...createCapsuleDto,
+      organization, // Associate the capsule with an organization
+    });
+
     return this.capsuleRepository.save(newCapsule);
   }
 
@@ -58,8 +79,11 @@ export class CapsuleService {
   async update(
     id: number,
     createCapsuleDto: CreateCapsuleDto,
+    organizationId: string,
   ): Promise<Capsule> {
-    const capsule = await this.capsuleRepository.findOne({ where: { id } });
+    const capsule = await this.capsuleRepository.findOne({
+      where: { id, organization: { id: organizationId } }, // Ensure capsule belongs to the organization
+    });
 
     if (!capsule) {
       throw new NotFoundException(`Capsule with id ${id} not found`);
@@ -71,9 +95,9 @@ export class CapsuleService {
   }
 
   // Get details of a specific capsule with task completion data
-  async findOne(id: number): Promise<any> {
+  async findOne(id: number, organizationId: string): Promise<any> {
     const capsule = await this.capsuleRepository.findOne({
-      where: { id },
+      where: { id, organization: { id: organizationId } }, // Ensure capsule belongs to the organization
       relations: ['tasks'],
     });
 
@@ -104,9 +128,10 @@ export class CapsuleService {
     };
   }
 
-  async delete(capsuleId: number): Promise<boolean> {
+  // Delete a capsule
+  async delete(capsuleId: number, organizationId: string): Promise<boolean> {
     const capsule = await this.capsuleRepository.findOne({
-      where: { id: capsuleId },
+      where: { id: capsuleId, organization: { id: organizationId } }, // Ensure capsule belongs to the organization
       relations: ['tasks'],
     });
 

@@ -6,6 +6,7 @@ import {
   Put,
   UseGuards,
   Req,
+  NotFoundException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -18,9 +19,18 @@ import { Skill } from 'src/entities/skill.entity';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  // Register a new user
+  // Register a new user linked to an organization
   @Post('register')
-  create(@Body() createUserDto: CreateUserDto) {
+  async create(
+    @Req() req: RequestWithUser,
+    @Body() createUserDto: CreateUserDto,
+  ) {
+    const { organizationId } = req.user; // Get organization from the logged-in user
+    const organization =
+      await this.userService.findOrganizationById(organizationId);
+    if (!organization) {
+      throw new NotFoundException('Organization not found');
+    }
     return this.userService.create(createUserDto);
   }
 
@@ -50,14 +60,13 @@ export class UserController {
   ) {
     const userId = req.user.id;
     const { profile, skills, password } = body;
-
-    // Pass bio, name, and email alongside the skills and password to the service
     return this.userService.updateProfile(userId, profile, skills, password);
   }
 
-  // Get all users (for admin access)
+  // Get all users within the organization
   @Get()
-  findAll() {
-    return this.userService.findAll();
+  findAll(@Req() req: RequestWithUser) {
+    const organizationId = req.user.organizationId;
+    return this.userService.findAllByOrganization(organizationId);
   }
 }

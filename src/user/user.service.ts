@@ -6,6 +6,7 @@ import { Profile } from 'src/entities/profile.entity';
 import { Skill } from 'src/entities/skill.entity';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
+import { Organization } from '../entities/organization.entity';
 
 @Injectable()
 export class UserService {
@@ -16,10 +17,12 @@ export class UserService {
     private userProfileRepository: Repository<Profile>,
     @InjectRepository(Skill)
     private skillRepository: Repository<Skill>,
+    @InjectRepository(Organization)
+    private organizationRepository: Repository<Organization>,
   ) {}
 
-  // Create a new user with a hashed password
-  async create(createUserDto: CreateUserDto) {
+  // Create a new user associated with an organization
+  async create(createUserDto: CreateUserDto): Promise<User> {
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
     const user = this.userRepository.create({
       ...createUserDto,
@@ -28,23 +31,10 @@ export class UserService {
     return this.userRepository.save(user);
   }
 
-  // Fetch a user by their UUID
-  async findOne(id: string): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { id },
-    });
-
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-
-    return user;
-  }
-
-  // Find a user by email
   async findByEmail(email: string): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { email },
+      relations: ['organization'], // Ensure organization is loaded
     });
 
     if (!user) {
@@ -54,9 +44,24 @@ export class UserService {
     return user;
   }
 
-  // Get all users (for listing)
-  findAll() {
+  // Find the organization by its ID
+  async findOrganizationById(id: string): Promise<Organization | undefined> {
+    return this.organizationRepository.findOne({ where: { id } });
+  }
+
+  // Fetch a user by ID and organization
+  async findOne(id: string): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return user;
+  }
+
+  // Find users by their organization
+  findAllByOrganization(organizationId: string) {
     return this.userRepository.find({
+      where: { organization: { id: organizationId } },
       select: ['id', 'name', 'email', 'avatar'],
     });
   }
@@ -67,11 +72,9 @@ export class UserService {
       where: { user: { id: userId } },
       relations: ['skills'],
     });
-
     if (!profile) {
       return null; // Return null if profile doesn't exist
     }
-
     return profile;
   }
 

@@ -7,6 +7,7 @@ import { Capsule } from '../entities/capsule.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskHistoryService } from './task-history.service';
+import { Organization } from 'src/entities/organization.entity';
 
 @Injectable()
 export class TaskService {
@@ -21,6 +22,9 @@ export class TaskService {
     private capsuleRepository: Repository<Capsule>,
 
     private taskHistoryService: TaskHistoryService,
+
+    @InjectRepository(Organization)
+    private organizationRepository: Repository<Organization>,
   ) {}
 
   // Find task details by ID (with subtasks and blockers)
@@ -52,9 +56,23 @@ export class TaskService {
   }
 
   // Create a new task (or subtask if parent_id is provided)
-  async create(createTaskDto: CreateTaskDto, userId: string): Promise<Task> {
+  async create(
+    createTaskDto: CreateTaskDto,
+    userId: string,
+    organizationId: string,
+  ): Promise<Task> {
     const { assignedUserIds, capsuleId, parent_id, blockers, ...taskData } =
       createTaskDto;
+
+    const organization = await this.organizationRepository.findOne({
+      where: { id: organizationId },
+    });
+
+    if (!organization) {
+      throw new NotFoundException(
+        `Organization with id ${organizationId} not found`,
+      );
+    }
 
     const capsule = await this.capsuleRepository.findOne({
       where: { id: capsuleId },
@@ -63,7 +81,11 @@ export class TaskService {
       throw new NotFoundException(`Capsule with ID ${capsuleId} not found`);
     }
 
-    const task = this.taskRepository.create({ ...taskData, capsule });
+    const task = this.taskRepository.create({
+      ...taskData,
+      capsule,
+      organization,
+    });
 
     if (parent_id) {
       const parentTask = await this.taskRepository.findOne({

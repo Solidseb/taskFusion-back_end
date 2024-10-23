@@ -4,10 +4,12 @@ import {
   Column,
   OneToMany,
   ManyToMany,
+  ManyToOne,
 } from 'typeorm';
 import { Capsule } from './capsule.entity';
 import { Task } from './task.entity';
 import { Profile } from './profile.entity';
+import { Organization } from './organization.entity';
 
 @Entity()
 export class User {
@@ -31,6 +33,12 @@ export class User {
 
   @ManyToMany(() => Task, (task) => task.assignedUsers)
   tasks: Task[];
+
+  @ManyToOne(() => Organization, (organization) => organization.users)
+  organization: Organization;
+
+  @Column()
+  organizationId: string; // Foreign key for direct reference
 
   @OneToMany(() => Profile, (profile) => profile.user, { cascade: true })
   profile: Profile[];

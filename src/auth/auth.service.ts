@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'; // Removed UnauthorizedException as it's unused
+import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
 import * as bcrypt from 'bcrypt';
@@ -12,6 +12,7 @@ export class AuthService {
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userService.findByEmail(email);
+
     if (user && (await bcrypt.compare(password, user.password))) {
       // Return user data without password
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -22,13 +23,20 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const payload = { email: user.email, sub: user.id };
+    // Include organizationId in the payload
+    const payload = {
+      email: user.email,
+      sub: user.id,
+      organizationId: user.organizationId, // Include the organizationId
+    };
+
     return {
       access_token: this.jwtService.sign(payload),
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
+        organizationId: user.organizationId, // Return organization info
       },
     };
   }

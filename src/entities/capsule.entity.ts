@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { Task } from './task.entity';
 import { User } from './user.entity';
+import { Organization } from './organization.entity';
 
 @Entity()
 export class Capsule {
@@ -32,4 +33,10 @@ export class Capsule {
 
   @OneToMany(() => Task, (task) => task.capsule, { cascade: true })
   tasks: Task[];
+
+  @ManyToOne(() => Organization, (organization) => organization.capsules)
+  organization: Organization;
+
+  @Column()
+  organizationId: string; // Foreign key for direct reference
 }

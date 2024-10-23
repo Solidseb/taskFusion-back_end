@@ -14,6 +14,7 @@ import { Capsule } from './capsule.entity';
 import { User } from './user.entity';
 import { Comment } from './comment.entity'; // Ensure this is imported
 import { TaskHistory } from './task-history.entity';
+import { Organization } from './organization.entity';
 
 @Entity()
 export class Task {
@@ -81,4 +82,10 @@ export class Task {
 
   @ManyToMany(() => Task, (task) => task.blockers)
   dependentTasks: Task[];
+
+  @ManyToOne(() => Organization, (organization) => organization.tasks)
+  organization: Organization;
+
+  @Column()
+  organizationId: string;
 }
