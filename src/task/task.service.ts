@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Task } from '../entities/task.entity';
 import { User } from '../entities/user.entity';
+import { Tag } from '../entities/tag.entity';
 import { Capsule } from '../entities/capsule.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -31,7 +32,7 @@ export class TaskService {
   async findOne(id: number): Promise<Task> {
     const task = await this.taskRepository.findOne({
       where: { id },
-      relations: ['assignedUsers', 'capsule', 'subtasks', 'blockers'],
+      relations: ['assignedUsers', 'capsule', 'subtasks', 'blockers', 'tags'],
     });
 
     if (!task) {
@@ -61,8 +62,14 @@ export class TaskService {
     userId: string,
     organizationId: string,
   ): Promise<Task> {
-    const { assignedUserIds, capsuleId, parent_id, blockers, ...taskData } =
-      createTaskDto;
+    const {
+      assignedUserIds,
+      capsuleId,
+      parent_id,
+      blockers,
+      tagIds,
+      ...taskData
+    } = createTaskDto;
 
     const organization = await this.organizationRepository.findOne({
       where: { id: organizationId },
@@ -113,9 +120,16 @@ export class TaskService {
       task.assignedUsers = users;
     }
 
+    if (tagIds && tagIds.length > 0) {
+      const tagIdsArray = tagIds.map((tag) => tag.id); // Safely map tag objects to their IDs
+      const tags = await this.taskRepository.manager.getRepository(Tag).findBy({
+        id: In(tagIdsArray),
+      });
+      task.tags = tags;
+    }
+
     const savedTask = await this.taskRepository.save(task);
 
-    // Log the task creation for the subtask and parent task (if applicable)
     await this.taskHistoryService.logTaskHistory(
       savedTask.id,
       capsuleId,
@@ -145,13 +159,14 @@ export class TaskService {
   ): Promise<Task> {
     const task = await this.taskRepository.findOne({
       where: { id },
-      relations: ['blockers'],
+      relations: ['blockers', 'tags'], // Include 'tags' relation
     });
     if (!task) {
       throw new NotFoundException(`Task with ID ${id} not found`);
     }
 
-    const { assignedUserIds, parent_id, blockers, ...taskData } = updateTaskDto;
+    const { assignedUserIds, parent_id, blockers, tags, ...taskData } =
+      updateTaskDto;
     const changes: Record<string, any> = {};
 
     // Function to dynamically detect changes
@@ -224,6 +239,22 @@ export class TaskService {
       }
       changes.parentTask = { old: task.parent_id, new: parent_id };
       task.parent_id = parent_id;
+    }
+
+    if (tags) {
+      const tagIdsArray = tags.map((tag) => tag.id);
+      const tagArray = await this.taskRepository.manager
+        .getRepository(Tag)
+        .findBy({
+          id: In(tagIdsArray),
+        });
+      const oldTags = task.tags.map((tag) => tag.id);
+      const newTagIds = tagArray.map((tag) => tag.id);
+
+      if (JSON.stringify(oldTags) !== JSON.stringify(newTagIds)) {
+        changes.tags = { old: oldTags, new: newTagIds };
+        task.tags = tagArray;
+      }
     }
 
     const updatedTask = await this.taskRepository.save(task);
@@ -372,16 +403,6 @@ export class TaskService {
       }
     }
 
-    // Update the status of subtasks if the task is being marked incomplete
-    /*if (task.subtasks && task.subtasks.length > 0 && !completed) {
-      task.subtasks.forEach((subtask) => {
-        subtask.isCompleted = false;
-        subtask.status = 'In Progress';
-        subtask.completedDate = null;
-      });
-      await this.taskRepository.save(task.subtasks);
-    }*/
-
     // If the task has dependent tasks (tasks blocked by this one), mark them as "In Progress" if this task is marked incomplete
     if (!completed && task.dependentTasks && task.dependentTasks.length > 0) {
       for (const dependentTask of task.dependentTasks) {
@@ -444,7 +465,7 @@ export class TaskService {
         capsule: { id: capsuleId },
         parent_id: null,
       },
-      relations: ['assignedUsers', 'capsule', 'subtasks', 'blockers'],
+      relations: ['assignedUsers', 'capsule', 'subtasks', 'blockers', 'tags'],
     });
 
     return tasks.filter((task) => task.parent_id === null);
@@ -454,7 +475,7 @@ export class TaskService {
   async findByParentId(parentId: number): Promise<Task[]> {
     return this.taskRepository.find({
       where: { parent_id: parentId },
-      relations: ['assignedUsers', 'capsule', 'subtasks', 'blockers'],
+      relations: ['assignedUsers', 'capsule', 'subtasks', 'blockers', 'tags'],
     });
   }
 }

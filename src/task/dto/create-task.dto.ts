@@ -52,4 +52,9 @@ export class CreateTaskDto {
   @IsOptional()
   @IsArray()
   blockers?: number[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tagIds: { id: string; name: string }[];
 }

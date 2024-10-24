@@ -51,4 +51,9 @@ export class UpdateTaskDto {
   @IsOptional()
   @IsArray()
   blockers?: number[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags: { id: string; name: string }[];
 }
